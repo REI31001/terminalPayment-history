@@ -12,12 +12,15 @@ import {
   Row,
   Col,
   Statistic,
-  Input
+  Input,
+  Tooltip
 } from 'antd';
 import { 
   MobileOutlined, 
-  LaptopOutlined, 
-  DownloadOutlined
+  CreditCardOutlined, 
+  DownloadOutlined,
+  SearchOutlined,
+  QuestionCircleOutlined
 } from '@ant-design/icons';
 import '../app/next-payment.css';
 import { mockPaymentData } from '../mocks/paymentData';
@@ -36,7 +39,7 @@ const PaymentHistory: React.FC = () => {
   };
 
   const renderPaymentTypeIcon = (type: 'terminal' | 'mobile') => {
-    return type === 'terminal' ? <LaptopOutlined /> : <MobileOutlined />;
+    return type === 'terminal' ? <CreditCardOutlined /> : <MobileOutlined />;
   };
 
   const columns = [
@@ -63,7 +66,12 @@ const PaymentHistory: React.FC = () => {
       key: 'id',
       render: (id: string, record: PaymentTransaction) => (
         record.transactionType === 'refund' ? (
-          <a onClick={() => setTransactionIdFilter(id)}>{id}</a>
+          <a onClick={() => setTransactionIdFilter(id)}>
+            <Space>
+              <SearchOutlined />
+              {id}
+            </Space>
+          </a>
         ) : id
       ),
     },
@@ -82,10 +90,12 @@ const PaymentHistory: React.FC = () => {
       title: '決済状態',
       dataIndex: 'status',
       key: 'status',
-      render: (status: 'confirmed' | 'authorized') => (
-        <Tag color={status === 'confirmed' ? 'success' : 'warning'}>
-          {status === 'confirmed' ? '決済確定' : '（仮）承認済'}
-        </Tag>
+      render: (status: 'confirmed' | 'authorized', record: PaymentTransaction) => (
+        record.transactionType === 'refund' ? null : (
+          <Tag color={status === 'confirmed' ? 'success' : 'processing'}>
+            {status === 'confirmed' ? '完了' : '処理中'}
+          </Tag>
+        )
       ),
     },
     {
@@ -98,7 +108,7 @@ const PaymentHistory: React.FC = () => {
       dataIndex: 'salesAmount',
       key: 'salesAmount',
       render: (amount: number, record: PaymentTransaction) => (
-        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : '#188038' }}>
+        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : 'inherit' }}>
           {record.transactionType === 'refund' ? '-' : ''}{formatCurrency(amount)}
         </span>
       ),
@@ -108,7 +118,7 @@ const PaymentHistory: React.FC = () => {
       dataIndex: 'paymentAmount',
       key: 'paymentAmount',
       render: (amount: number, record: PaymentTransaction) => (
-        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : '#188038' }}>
+        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : 'inherit' }}>
           {record.transactionType === 'refund' ? '-' : ''}{formatCurrency(amount)}
         </span>
       ),
@@ -118,7 +128,7 @@ const PaymentHistory: React.FC = () => {
       dataIndex: 'fee',
       key: 'fee',
       render: (fee: number, record: PaymentTransaction) => (
-        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : '#188038' }}>
+        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : 'inherit' }}>
           {record.transactionType === 'refund' ? '-' : ''}{formatCurrency(fee)}（2%）
         </span>
       ),
@@ -139,8 +149,23 @@ const PaymentHistory: React.FC = () => {
           <Card style={{ marginBottom: 16, background: 'white' }}>
             <Row gutter={[16, 16]} style={{ alignItems: 'center' }}>
               <Col flex="auto">
-                <Text strong>現在の入金サイクル</Text>
-                <div style={{ whiteSpace: 'nowrap' }}>{mockPaymentData.paymentCycle.start} 〜 {mockPaymentData.paymentCycle.end}</div>
+                <Select
+                  defaultValue="すべての区分"
+                  style={{ width: '100%' }}
+                  options={[
+                    { value: 'all', label: 'すべての区分' },
+                    { value: 'payment', label: '決済' },
+                    { value: 'refund', label: '取消' },
+                  ]}
+                />
+              </Col>
+              <Col flex="auto">
+                <Input
+                  placeholder="取引IDで検索"
+                  value={transactionIdFilter || ''}
+                  onChange={(e) => setTransactionIdFilter(e.target.value || null)}
+                  allowClear
+                />
               </Col>
               <Col flex="auto">
                 <Select
@@ -155,32 +180,13 @@ const PaymentHistory: React.FC = () => {
               </Col>
               <Col flex="auto">
                 <Select
-                  defaultValue="すべての区分"
-                  style={{ width: '100%' }}
-                  options={[
-                    { value: 'all', label: 'すべての区分' },
-                    { value: 'payment', label: '決済' },
-                    { value: 'refund', label: '取消' },
-                  ]}
-                />
-              </Col>
-              <Col flex="auto">
-                <Select
                   defaultValue="すべての決済状態"
                   style={{ width: '100%' }}
                   options={[
                     { value: 'all', label: 'すべての決済状態' },
-                    { value: 'confirmed', label: '決済確定' },
-                    { value: 'authorized', label: '（仮）承認済' },
+                    { value: 'confirmed', label: '完了' },
+                    { value: 'authorized', label: '処理中' },
                   ]}
-                />
-              </Col>
-              <Col flex="auto">
-                <Input
-                  placeholder="取引IDで検索"
-                  value={transactionIdFilter || ''}
-                  onChange={(e) => setTransactionIdFilter(e.target.value || null)}
-                  allowClear
                 />
               </Col>
               <Col>
@@ -196,6 +202,7 @@ const PaymentHistory: React.FC = () => {
               (transaction.transactionType === 'refund' && transaction.originalTransactionId === transactionIdFilter)
             )}
             columns={columns}
+            scroll={{ x: 'max-content' }}
             pagination={{
               total: mockPaymentData.transactions.length,
               pageSize: 10,
@@ -219,6 +226,25 @@ const PaymentHistory: React.FC = () => {
               </Col>
               <Col flex="auto">
                 <Select
+                  defaultValue="すべての区分"
+                  style={{ width: '100%' }}
+                  options={[
+                    { value: 'all', label: 'すべての区分' },
+                    { value: 'payment', label: '決済' },
+                    { value: 'refund', label: '取消' },
+                  ]}
+                />
+              </Col>
+              <Col flex="auto">
+                <Input
+                  placeholder="取引IDで検索"
+                  value={transactionIdFilter || ''}
+                  onChange={(e) => setTransactionIdFilter(e.target.value || null)}
+                  allowClear
+                />
+              </Col>
+              <Col flex="auto">
+                <Select
                   defaultValue="すべての決済種別"
                   style={{ width: '100%' }}
                   options={[
@@ -230,23 +256,12 @@ const PaymentHistory: React.FC = () => {
               </Col>
               <Col flex="auto">
                 <Select
-                  defaultValue="すべての区分"
-                  style={{ width: '100%' }}
-                  options={[
-                    { value: 'all', label: 'すべての区分' },
-                    { value: 'payment', label: '決済' },
-                    { value: 'refund', label: '取消' },
-                  ]}
-                />
-              </Col>
-              <Col flex="auto">
-                <Select
                   defaultValue="すべての決済状態"
                   style={{ width: '100%' }}
                   options={[
                     { value: 'all', label: 'すべての決済状態' },
-                    { value: 'confirmed', label: '決済確定' },
-                    { value: 'authorized', label: '（仮）承認済' },
+                    { value: 'confirmed', label: '完了' },
+                    { value: 'authorized', label: '処理中' },
                   ]}
                 />
               </Col>
@@ -258,8 +273,12 @@ const PaymentHistory: React.FC = () => {
             </Row>
           </Card>
           <Table
-            dataSource={mockPaymentData.transactions}
+            dataSource={mockPaymentData.transactions.filter(transaction => 
+              !transactionIdFilter || transaction.id === transactionIdFilter || 
+              (transaction.transactionType === 'refund' && transaction.originalTransactionId === transactionIdFilter)
+            )}
             columns={columns}
+            scroll={{ x: 'max-content' }}
             pagination={{
               total: mockPaymentData.transactions.length,
               pageSize: 10,
@@ -292,7 +311,7 @@ const PaymentHistory: React.FC = () => {
       <Card className="next-payment-card">
         <Row gutter={[24, 24]}>
           <Col xs={24} sm={12}>
-            <Title level={4} style={{ marginBottom: 16 }}>次回振込予定額</Title>
+            <Title level={4} style={{ marginBottom: 8 }}>次回振込予定額</Title>
             <Statistic
               value={mockPaymentData.nextPaymentAmount}
               precision={0}
@@ -308,7 +327,27 @@ const PaymentHistory: React.FC = () => {
           </Col>
           <Col xs={24} sm={12}>
             <div className="payment-cycle-info">
-              <Title level={4} style={{ marginBottom: 16 }}>入金サイクル</Title>
+              <Title level={4} style={{ marginBottom: 8 }}>
+                入金サイクル
+                <Tooltip 
+                  title={
+                    <span>
+                      売上の入金カレンダーは
+                      <a 
+                        href="https://dinii.wraptas.site/1ac71045ad748068b628e931514615b1" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ margin: '0 4px' }}
+                      >
+                        ヘルプサイト
+                      </a>
+                      を確認ください。
+                    </span>
+                  }
+                >
+                  <QuestionCircleOutlined style={{ marginLeft: 8, color: 'inherit' }} />
+                </Tooltip>
+              </Title>
               <div style={{ fontSize: '16px', marginBottom: 8 }}>
                 {mockPaymentData.paymentCycle.start} 〜 {mockPaymentData.paymentCycle.end}
               </div>
