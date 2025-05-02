@@ -9,6 +9,7 @@ export interface PaymentTransaction {
   paymentAmount: number;
   fee: number;
   paymentMethod: string;
+  originalTransactionId?: string;
 }
 
 export interface PaymentData {

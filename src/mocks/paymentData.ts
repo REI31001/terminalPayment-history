@@ -64,7 +64,7 @@ export const mockPaymentData: PaymentData = {
       paymentMethod: 'VISA_CARD'
     },
     {
-      id: 'NBNJ84J68WT6TNV5',
+      id: 'QWFMKWQOMA39XFV5',
       date: '2024-11-05 17:10',
       paymentType: 'mobile',
       transactionType: 'refund',
@@ -73,7 +73,70 @@ export const mockPaymentData: PaymentData = {
       salesAmount: 810,
       paymentAmount: 794,
       fee: 16,
+      paymentMethod: 'VISA_CARD',
+      originalTransactionId: 'QWFMKWQOMA39XFV5'
+    },
+    {
+      id: 'M7K8N9O0P1Q2R3S4',
+      date: '2024-11-05 17:15',
+      paymentType: 'terminal',
+      transactionType: 'payment',
+      status: 'confirmed',
+      scheduledDate: '2025-04-25',
+      salesAmount: 2500,
+      paymentAmount: 2450,
+      fee: 50,
+      paymentMethod: 'MASTER_CARD'
+    },
+    {
+      id: 'M7K8N9O0P1Q2R3S4',
+      date: '2024-11-05 17:20',
+      paymentType: 'mobile',
+      transactionType: 'refund',
+      status: 'confirmed',
+      scheduledDate: '2025-04-25',
+      salesAmount: 1500,
+      paymentAmount: 1470,
+      fee: 30,
+      paymentMethod: 'JCB',
+      originalTransactionId: 'M7K8N9O0P1Q2R3S4'
+    },
+    {
+      id: 'B3C4D5E6F7G8H9I0',
+      date: '2024-11-05 17:25',
+      paymentType: 'terminal',
+      transactionType: 'payment',
+      status: 'authorized',
+      scheduledDate: '2025-04-25',
+      salesAmount: 8000,
+      paymentAmount: 7840,
+      fee: 160,
+      paymentMethod: 'AMEX'
+    },
+    {
+      id: 'J1K2L3M4N5O6P7Q8',
+      date: '2024-11-05 17:30',
+      paymentType: 'mobile',
+      transactionType: 'payment',
+      status: 'confirmed',
+      scheduledDate: '2025-04-25',
+      salesAmount: 3500,
+      paymentAmount: 3430,
+      fee: 70,
       paymentMethod: 'VISA_CARD'
+    },
+    {
+      id: 'J1K2L3M4N5O6P7Q8',
+      date: '2024-11-05 17:35',
+      paymentType: 'terminal',
+      transactionType: 'refund',
+      status: 'confirmed',
+      scheduledDate: '2025-04-25',
+      salesAmount: 2000,
+      paymentAmount: 1960,
+      fee: 40,
+      paymentMethod: 'MASTER_CARD',
+      originalTransactionId: 'J1K2L3M4N5O6P7Q8'
     }
   ]
 }; 

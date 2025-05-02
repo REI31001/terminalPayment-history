@@ -12,7 +12,9 @@ import {
   Row,
   Col,
   Statistic,
-  Grid
+  Grid,
+  Drawer,
+  Input
 } from 'antd';
 import { 
   MobileOutlined, 
@@ -21,9 +23,10 @@ import {
   LeftOutlined,
   RightOutlined
 } from '@ant-design/icons';
-import './PaymentHistory.css';
+import '../app/next-payment.css';
 import { mockPaymentData } from '../mocks/paymentData';
 import { PaymentTransaction } from '../types/payment';
+import type { SortOrder } from 'antd/es/table/interface';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -31,6 +34,7 @@ const { useBreakpoint } = Grid;
 
 const PaymentHistory: React.FC = () => {
   const [activeTab, setActiveTab] = useState('nextpayment');
+  const [transactionIdFilter, setTransactionIdFilter] = useState<string | null>(null);
   const screens = useBreakpoint();
 
   const formatCurrency = (amount: number) => {
@@ -43,14 +47,31 @@ const PaymentHistory: React.FC = () => {
 
   const columns = [
     {
-      title: '取引ID',
-      dataIndex: 'id',
-      key: 'id',
-    },
-    {
       title: '取引日時',
       dataIndex: 'date',
       key: 'date',
+      sorter: (a: PaymentTransaction, b: PaymentTransaction) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      defaultSortOrder: 'descend' as SortOrder,
+    },
+    {
+      title: '区分',
+      dataIndex: 'transactionType',
+      key: 'transactionType',
+      render: (type: 'payment' | 'refund') => (
+        <Tag color={type === 'payment' ? 'success' : 'error'}>
+          {type === 'payment' ? '決済' : '取消'}
+        </Tag>
+      ),
+    },
+    {
+      title: '取引ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (id: string, record: PaymentTransaction) => (
+        record.transactionType === 'refund' ? (
+          <a onClick={() => setTransactionIdFilter(id)}>{id}</a>
+        ) : id
+      ),
     },
     {
       title: '決済種別',
@@ -61,16 +82,6 @@ const PaymentHistory: React.FC = () => {
           {renderPaymentTypeIcon(type)}
           {type === 'terminal' ? '端末決済' : 'モバイル決済'}
         </Space>
-      ),
-    },
-    {
-      title: '区分',
-      dataIndex: 'transactionType',
-      key: 'transactionType',
-      render: (type: 'payment' | 'refund') => (
-        <Tag color={type === 'payment' ? 'success' : 'error'}>
-          {type === 'payment' ? '決済' : '取消'}
-        </Tag>
       ),
     },
     {
@@ -92,19 +103,31 @@ const PaymentHistory: React.FC = () => {
       title: '売上',
       dataIndex: 'salesAmount',
       key: 'salesAmount',
-      render: (amount: number) => formatCurrency(amount),
+      render: (amount: number, record: PaymentTransaction) => (
+        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : '#188038' }}>
+          {record.transactionType === 'refund' ? '-' : ''}{formatCurrency(amount)}
+        </span>
+      ),
     },
     {
       title: '入金額',
       dataIndex: 'paymentAmount',
       key: 'paymentAmount',
-      render: (amount: number) => formatCurrency(amount),
+      render: (amount: number, record: PaymentTransaction) => (
+        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : '#188038' }}>
+          {record.transactionType === 'refund' ? '-' : ''}{formatCurrency(amount)}
+        </span>
+      ),
     },
     {
       title: '手数料',
       dataIndex: 'fee',
       key: 'fee',
-      render: (fee: number) => `${formatCurrency(fee)}（2%）`,
+      render: (fee: number, record: PaymentTransaction) => (
+        <span style={{ color: record.transactionType === 'refund' ? '#d93025' : '#188038' }}>
+          {record.transactionType === 'refund' ? '-' : ''}{formatCurrency(fee)}（2%）
+        </span>
+      ),
     },
     {
       title: '支払方法',
@@ -113,19 +136,62 @@ const PaymentHistory: React.FC = () => {
     },
   ];
 
+  const handleTransactionSearch = (id: string) => {
+    setSelectedTransactionId(id);
+    setDrawerVisible(true);
+  };
+
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+
+  const drawerContent = (
+    <div>
+      {selectedTransactionId && (
+        <>
+          <Title level={4}>取引詳細</Title>
+          <p>取引ID: {selectedTransactionId}</p>
+          {mockPaymentData.transactions.find(t => t.id === selectedTransactionId)?.transactionType === 'refund' && (
+            <div style={{ marginTop: 16 }}>
+              <Title level={5}>元取引情報</Title>
+              {(() => {
+                const refundTransaction = mockPaymentData.transactions.find(t => t.id === selectedTransactionId);
+                const originalTransaction = refundTransaction?.originalTransactionId 
+                  ? mockPaymentData.transactions.find(t => t.id === refundTransaction.originalTransactionId)
+                  : null;
+                
+                if (originalTransaction) {
+                  return (
+                    <div>
+                      <p>取引ID: {originalTransaction.id}</p>
+                      <p>取引日時: {originalTransaction.date}</p>
+                      <p>決済種別: {originalTransaction.paymentType === 'terminal' ? '端末決済' : 'モバイル決済'}</p>
+                      <p>売上: {formatCurrency(originalTransaction.salesAmount)}</p>
+                      <p>支払方法: {originalTransaction.paymentMethod}</p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   const items = [
     {
       key: 'nextpayment',
       label: '次回入金サイクル取引',
       children: (
         <div>
-          <Card className="filter-card">
-            <Row gutter={[16, 16]}>
-              <Col span={24}>
+          <Card style={{ marginBottom: 16, background: 'white' }}>
+            <Row gutter={[16, 16]} style={{ alignItems: 'center' }}>
+              <Col flex="auto">
                 <Text strong>現在の入金サイクル</Text>
-                <div>{mockPaymentData.paymentCycle.start} 〜 {mockPaymentData.paymentCycle.end}</div>
+                <div style={{ whiteSpace: 'nowrap' }}>{mockPaymentData.paymentCycle.start} 〜 {mockPaymentData.paymentCycle.end}</div>
               </Col>
-              <Col xs={24} sm={8}>
+              <Col flex="auto">
                 <Select
                   defaultValue="すべての決済種別"
                   style={{ width: '100%' }}
@@ -136,7 +202,7 @@ const PaymentHistory: React.FC = () => {
                   ]}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col flex="auto">
                 <Select
                   defaultValue="すべての区分"
                   style={{ width: '100%' }}
@@ -147,7 +213,7 @@ const PaymentHistory: React.FC = () => {
                   ]}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col flex="auto">
                 <Select
                   defaultValue="すべての決済状態"
                   style={{ width: '100%' }}
@@ -158,15 +224,26 @@ const PaymentHistory: React.FC = () => {
                   ]}
                 />
               </Col>
-              <Col span={24} style={{ textAlign: 'right' }}>
+              <Col flex="auto">
+                <Input
+                  placeholder="取引IDで検索"
+                  value={transactionIdFilter || ''}
+                  onChange={(e) => setTransactionIdFilter(e.target.value || null)}
+                  allowClear
+                />
+              </Col>
+              <Col>
                 <Button type="primary" icon={<DownloadOutlined />}>
-                  ダウンロード
+                  CSVダウンロード
                 </Button>
               </Col>
             </Row>
           </Card>
           <Table
-            dataSource={mockPaymentData.transactions}
+            dataSource={mockPaymentData.transactions.filter(transaction => 
+              !transactionIdFilter || transaction.id === transactionIdFilter || 
+              (transaction.transactionType === 'refund' && transaction.originalTransactionId === transactionIdFilter)
+            )}
             columns={columns}
             pagination={{
               total: mockPaymentData.transactions.length,
@@ -184,12 +261,12 @@ const PaymentHistory: React.FC = () => {
       label: 'すべての決済履歴',
       children: (
         <div>
-          <Card className="filter-card">
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={8}>
+          <Card style={{ marginBottom: 16, background: 'white' }}>
+            <Row gutter={[16, 16]} style={{ alignItems: 'center' }}>
+              <Col flex="auto">
                 <RangePicker style={{ width: '100%' }} />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col flex="auto">
                 <Select
                   defaultValue="すべての決済種別"
                   style={{ width: '100%' }}
@@ -200,7 +277,7 @@ const PaymentHistory: React.FC = () => {
                   ]}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col flex="auto">
                 <Select
                   defaultValue="すべての区分"
                   style={{ width: '100%' }}
@@ -211,7 +288,7 @@ const PaymentHistory: React.FC = () => {
                   ]}
                 />
               </Col>
-              <Col xs={24} sm={8}>
+              <Col flex="auto">
                 <Select
                   defaultValue="すべての決済状態"
                   style={{ width: '100%' }}
@@ -222,9 +299,9 @@ const PaymentHistory: React.FC = () => {
                   ]}
                 />
               </Col>
-              <Col span={24} style={{ textAlign: 'right' }}>
+              <Col>
                 <Button type="primary" icon={<DownloadOutlined />}>
-                  ダウンロード
+                  CSVダウンロード
                 </Button>
               </Col>
             </Row>
@@ -264,64 +341,79 @@ const PaymentHistory: React.FC = () => {
       <Card className="next-payment-card">
         <Row gutter={[24, 24]}>
           <Col xs={24} sm={12}>
-            <div>
-              <Title level={4}>次回振込予定額</Title>
-              <Statistic
-                value={mockPaymentData.nextPaymentAmount}
-                precision={0}
-                prefix="¥"
-                valueStyle={{ color: '#1890ff', fontSize: '32px' }}
-              />
-              <Text>入金予定日: {mockPaymentData.nextPaymentDate}</Text>
-            </div>
+            <Title level={4} style={{ marginBottom: 16 }}>次回振込予定額</Title>
+            <Statistic
+              value={mockPaymentData.nextPaymentAmount}
+              precision={0}
+              prefix="¥"
+              valueStyle={{ 
+                color: '#1677FF', 
+                fontSize: '40px',
+                lineHeight: '38px',
+                fontWeight: 700 
+              }}
+            />
+            <Text>入金予定日: {mockPaymentData.nextPaymentDate}</Text>
           </Col>
           <Col xs={24} sm={12}>
-            <Card className="payment-cycle-card">
-              <Title level={5}>入金サイクル</Title>
-              <Text>{mockPaymentData.paymentCycle.start} 〜 {mockPaymentData.paymentCycle.end}</Text>
-              <div style={{ marginTop: 8 }}>
-                <Text type="secondary">設定: {mockPaymentData.paymentCycle.type}</Text>
+            <div className="payment-cycle-info">
+              <Title level={4} style={{ marginBottom: 16 }}>入金サイクル</Title>
+              <div style={{ fontSize: '16px', marginBottom: 8 }}>
+                {mockPaymentData.paymentCycle.start} 〜 {mockPaymentData.paymentCycle.end}
               </div>
-            </Card>
+              <Text type="secondary">設定: {mockPaymentData.paymentCycle.type}</Text>
+            </div>
           </Col>
           <Col span={24}>
-            <Card className="bank-info-card">
+            <div className="bank-info-section">
               <Row gutter={[24, 16]}>
                 <Col xs={24} sm={6}>
-                  <div>
+                  <div className="bank-info-item">
                     <Text type="secondary">金融機関名</Text>
-                    <div>{mockPaymentData.bankInfo.bankName}</div>
+                    <div className="bank-info-value">{mockPaymentData.bankInfo.bankName}</div>
                   </div>
                 </Col>
                 <Col xs={24} sm={6}>
-                  <div>
+                  <div className="bank-info-item">
                     <Text type="secondary">支店名</Text>
-                    <div>{mockPaymentData.bankInfo.branchName}</div>
+                    <div className="bank-info-value">{mockPaymentData.bankInfo.branchName}</div>
                   </div>
                 </Col>
                 <Col xs={24} sm={6}>
-                  <div>
+                  <div className="bank-info-item">
                     <Text type="secondary">口座名義</Text>
-                    <div>{mockPaymentData.bankInfo.accountName}</div>
+                    <div className="bank-info-value">{mockPaymentData.bankInfo.accountName}</div>
                   </div>
                 </Col>
                 <Col xs={24} sm={6}>
-                  <div>
+                  <div className="bank-info-item">
                     <Text type="secondary">口座番号</Text>
-                    <div>{mockPaymentData.bankInfo.accountNumber}</div>
+                    <div className="bank-info-value">{mockPaymentData.bankInfo.accountNumber}</div>
                   </div>
                 </Col>
               </Row>
-            </Card>
+            </div>
           </Col>
         </Row>
       </Card>
 
-      <Tabs
-        activeKey={activeTab}
-        items={items}
-        onChange={(key) => setActiveTab(key)}
-      />
+      <Card className="payment-history-card">
+        <Tabs
+          activeKey={activeTab}
+          items={items}
+          onChange={(key) => setActiveTab(key)}
+        />
+      </Card>
+
+      <Drawer
+        title="取引詳細"
+        placement="right"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={400}
+      >
+        {drawerContent}
+      </Drawer>
     </div>
   );
 };

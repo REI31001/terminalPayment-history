@@ -10,7 +10,7 @@ function App() {
       locale={jaJP}
       theme={{
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#1677FF',
           borderRadius: 8,
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         },

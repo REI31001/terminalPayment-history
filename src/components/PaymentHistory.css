@@ -52,7 +52,6 @@ h1 {
   border-radius: 8px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .store-selector {
@@ -86,6 +85,7 @@ h1 {
   font-size: 32px;
   font-weight: 700;
   color: #1a73e8;
+  font-weight: bold;
 }
 
 .payment-cycle {
@@ -267,14 +267,11 @@ td {
 }
 
 .payment-history-container {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px;
 }
 
 .payment-cycle-card {
   background-color: #e6f7ff;
-  border: 1px solid #91d5ff;
 }
 
 .bank-info-card {
@@ -284,7 +281,6 @@ td {
 .filter-card {
   margin-bottom: 24px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* テーブルのスタイル */
@@ -339,4 +335,31 @@ td {
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
+}
+
+.ant-drawer-content-wrapper {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.ant-drawer-header {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ant-drawer-body {
+  padding: 24px;
+}
+
+.transaction-detail-item {
+  margin-bottom: 16px;
+}
+
+.transaction-detail-label {
+  color: #5f6368;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.transaction-detail-value {
+  font-size: 16px;
+  font-weight: 500;
 } 
