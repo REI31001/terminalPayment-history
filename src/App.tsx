@@ -1,4 +1,3 @@
-import React from 'react';
 import { ConfigProvider } from 'antd';
 import jaJP from 'antd/locale/ja_JP';
 import PaymentHistory from './components/PaymentHistory';

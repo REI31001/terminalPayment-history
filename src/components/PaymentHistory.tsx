@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Card, 
   Tabs, 
@@ -13,15 +13,12 @@ import {
   Col,
   Statistic,
   Grid,
-  Drawer,
   Input
 } from 'antd';
 import { 
   MobileOutlined, 
   LaptopOutlined, 
-  DownloadOutlined,
-  LeftOutlined,
-  RightOutlined
+  DownloadOutlined
 } from '@ant-design/icons';
 import '../app/next-payment.css';
 import { mockPaymentData } from '../mocks/paymentData';
@@ -30,12 +27,10 @@ import type { SortOrder } from 'antd/es/table/interface';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
-const { useBreakpoint } = Grid;
 
 const PaymentHistory: React.FC = () => {
   const [activeTab, setActiveTab] = useState('nextpayment');
   const [transactionIdFilter, setTransactionIdFilter] = useState<string | null>(null);
-  const screens = useBreakpoint();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(amount);
@@ -135,49 +130,6 @@ const PaymentHistory: React.FC = () => {
       key: 'paymentMethod',
     },
   ];
-
-  const handleTransactionSearch = (id: string) => {
-    setSelectedTransactionId(id);
-    setDrawerVisible(true);
-  };
-
-  const [drawerVisible, setDrawerVisible] = useState(false);
-  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
-
-  const drawerContent = (
-    <div>
-      {selectedTransactionId && (
-        <>
-          <Title level={4}>取引詳細</Title>
-          <p>取引ID: {selectedTransactionId}</p>
-          {mockPaymentData.transactions.find(t => t.id === selectedTransactionId)?.transactionType === 'refund' && (
-            <div style={{ marginTop: 16 }}>
-              <Title level={5}>元取引情報</Title>
-              {(() => {
-                const refundTransaction = mockPaymentData.transactions.find(t => t.id === selectedTransactionId);
-                const originalTransaction = refundTransaction?.originalTransactionId 
-                  ? mockPaymentData.transactions.find(t => t.id === refundTransaction.originalTransactionId)
-                  : null;
-                
-                if (originalTransaction) {
-                  return (
-                    <div>
-                      <p>取引ID: {originalTransaction.id}</p>
-                      <p>取引日時: {originalTransaction.date}</p>
-                      <p>決済種別: {originalTransaction.paymentType === 'terminal' ? '端末決済' : 'モバイル決済'}</p>
-                      <p>売上: {formatCurrency(originalTransaction.salesAmount)}</p>
-                      <p>支払方法: {originalTransaction.paymentMethod}</p>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
 
   const items = [
     {
@@ -404,16 +356,6 @@ const PaymentHistory: React.FC = () => {
           onChange={(key) => setActiveTab(key)}
         />
       </Card>
-
-      <Drawer
-        title="取引詳細"
-        placement="right"
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
-        width={400}
-      >
-        {drawerContent}
-      </Drawer>
     </div>
   );
 };
