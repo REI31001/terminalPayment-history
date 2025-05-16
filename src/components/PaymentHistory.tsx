@@ -65,15 +65,36 @@ const PaymentHistory: React.FC = () => {
       dataIndex: 'id',
       key: 'id',
       render: (id: string, record: PaymentTransaction) => (
-        record.transactionType === 'refund' ? (
-          <a onClick={() => setTransactionIdFilter(id)}>
-            <Space>
-              <SearchOutlined />
-              {id}
-            </Space>
-          </a>
-        ) : id
+        <Tooltip title={record.transactionType === 'refund' ? '取消取引ID' : '取引ID'}>
+          {id}
+        </Tooltip>
       ),
+    },
+    {
+      title: '関連取引',
+      key: 'relatedTransaction',
+      render: (_: unknown, record: PaymentTransaction) => {
+        if (record.transactionType === 'refund') {
+          const originalTransaction = mockPaymentData.transactions.find(
+            t => t.id === record.originalTransactionId
+          );
+          return originalTransaction ? (
+            <Space>
+              <Button 
+                type="link" 
+                onClick={() => setTransactionIdFilter(originalTransaction.id)}
+                icon={<SearchOutlined />}
+              >
+                元取引を表示
+              </Button>
+              <Tooltip title="元取引の詳細を表示">
+                <Text type="secondary">ID: {originalTransaction.id}</Text>
+              </Tooltip>
+            </Space>
+          ) : null;
+        }
+        return null;
+      },
     },
     {
       title: '決済種別',
@@ -143,7 +164,7 @@ const PaymentHistory: React.FC = () => {
   const items = [
     {
       key: 'nextpayment',
-      label: '次回入金サイクル取引',
+      label: '次回入金サイクル決済履歴',
       children: (
         <div>
           <Card style={{ marginBottom: 16, background: 'white' }}>
@@ -317,7 +338,7 @@ const PaymentHistory: React.FC = () => {
               precision={0}
               prefix="¥"
               valueStyle={{ 
-                color: '#1677FF', 
+                color: '#000000', 
                 fontSize: '40px',
                 lineHeight: '38px',
                 fontWeight: 700 
@@ -334,7 +355,7 @@ const PaymentHistory: React.FC = () => {
                     <span>
                       売上の入金カレンダーは
                       <a 
-                        href="https://dinii.wraptas.site/1ac71045ad748068b628e931514615b1" 
+                        href="/help/payment-calendar" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         style={{ margin: '0 4px' }}
