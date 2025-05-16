@@ -65,36 +65,18 @@ const PaymentHistory: React.FC = () => {
       dataIndex: 'id',
       key: 'id',
       render: (id: string, record: PaymentTransaction) => (
-        <Tooltip title={record.transactionType === 'refund' ? '取消取引ID' : '取引ID'}>
-          {id}
-        </Tooltip>
+        <Space>
+          {record.transactionType === 'refund' && record.originalTransactionId ? (
+            <Button 
+              type="link" 
+              onClick={() => setTransactionIdFilter(record.originalTransactionId || null)}
+              style={{ padding: 0 }}
+            >
+              {id}
+            </Button>
+          ) : id}
+        </Space>
       ),
-    },
-    {
-      title: '関連取引',
-      key: 'relatedTransaction',
-      render: (_: unknown, record: PaymentTransaction) => {
-        if (record.transactionType === 'refund') {
-          const originalTransaction = mockPaymentData.transactions.find(
-            t => t.id === record.originalTransactionId
-          );
-          return originalTransaction ? (
-            <Space>
-              <Button 
-                type="link" 
-                onClick={() => setTransactionIdFilter(originalTransaction.id)}
-                icon={<SearchOutlined />}
-              >
-                元取引を表示
-              </Button>
-              <Tooltip title="元取引の詳細を表示">
-                <Text type="secondary">ID: {originalTransaction.id}</Text>
-              </Tooltip>
-            </Space>
-          ) : null;
-        }
-        return null;
-      },
     },
     {
       title: '決済種別',
